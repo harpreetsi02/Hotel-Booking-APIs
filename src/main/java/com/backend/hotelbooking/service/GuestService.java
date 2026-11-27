@@ -4,8 +4,10 @@ import com.backend.hotelbooking.dto.request.GuestRequest;
 import com.backend.hotelbooking.dto.response.GuestResponse;
 import com.backend.hotelbooking.entity.Guest;
 import com.backend.hotelbooking.exception.DuplicateResourceException;
+import com.backend.hotelbooking.exception.ResourceInUseException;
 import com.backend.hotelbooking.exception.ResourceNotFoundException;
 import com.backend.hotelbooking.mapper.GuestMapper;
+import com.backend.hotelbooking.repository.BookingRepository;
 import com.backend.hotelbooking.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ public class GuestService {
 
     private final GuestRepository guestRepository;
     private final GuestMapper guestMapper;
+    private final BookingRepository bookingRepository;
 
     @Transactional
     public GuestResponse create(GuestRequest request){
@@ -58,6 +61,9 @@ public class GuestService {
 
     @Transactional
     public void deleteById(Long guestId){
+        if (bookingRepository.existsByGuest_Id(guestId)) {
+            throw new ResourceInUseException("Guest " + guestId + " cannot be deleted: it has bookings");
+        }
         guestRepository.delete(findGuestOrThrow(guestId));
     }
 

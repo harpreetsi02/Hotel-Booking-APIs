@@ -5,8 +5,10 @@ import com.backend.hotelbooking.dto.response.RoomResponse;
 import com.backend.hotelbooking.entity.Hotel;
 import com.backend.hotelbooking.entity.Room;
 import com.backend.hotelbooking.exception.DuplicateResourceException;
+import com.backend.hotelbooking.exception.ResourceInUseException;
 import com.backend.hotelbooking.exception.ResourceNotFoundException;
 import com.backend.hotelbooking.mapper.RoomMapper;
+import com.backend.hotelbooking.repository.BookingRepository;
 import com.backend.hotelbooking.repository.HotelRepository;
 import com.backend.hotelbooking.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final HotelRepository hotelRepository;
     private final RoomMapper roomMapper;
+    private final BookingRepository bookingRepository;
 
     @Transactional
     public RoomResponse create(Long hotelId, RoomRequest request){
@@ -67,6 +70,9 @@ public class RoomService {
 
     @Transactional
     public void delete(Long roomId, Long hotelId){
+        if (bookingRepository.existsByRoom_Id(roomId)) {
+            throw new ResourceInUseException("Room " + roomId + " cannot be deleted: it has bookings");
+        }
         roomRepository.delete(findRoomOrThrow(roomId, hotelId));
     }
 
